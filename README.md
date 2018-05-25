@@ -11,6 +11,7 @@
 
 - [ ] Get Stable Version
 - [ ] Write Getting Started
+- [ ] Include [Swag](https://github.com/swaggo/swag) and [Govalidator](https://github.com/asaskevich/govalidator)
 - [ ] Implement Docker Environment
 - [ ] Implement Dependencies Injection
 - [ ] Implement Unit Testing
