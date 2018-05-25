@@ -1,0 +1,15 @@
+{
+    "log":{
+        "level":"debug"
+    },
+    "address":":8080",
+    "mongodb":{
+        "addresses":[
+            "127.0.0.1:27017"
+        ],
+        "timeout":60,
+        "database":"gotodo",
+        "username":"gtdusr",
+        "password":"supersecret"
+    }
+}
