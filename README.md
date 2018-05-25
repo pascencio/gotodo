@@ -1,4 +1,4 @@
-# Simple TODO app for learning Golang
+# Simple TODO application for learn Golang
 
 ## Dependencies
 
