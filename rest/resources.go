@@ -1,11 +1,5 @@
 package rest
 
-import (
-	"encoding/json"
-
-	"github.com/pascencio/gotodo/todo"
-)
-
 type Resource struct {
 	Method    string
 	Path      string
@@ -20,17 +14,4 @@ type ResourceDefinition struct {
 
 type ResourceConfigurator interface {
 	Configure(ResourceDefinition)
-}
-
-func Setup(configurator ResourceConfigurator) {
-	definitions := []ResourceDefinition{
-		NewCrudResource("todo", func(bytes []byte) interface{} {
-			todo := &todo.Todo{}
-			json.Unmarshal(bytes, &todo)
-			return todo
-		}),
-	}
-	for _, definition := range definitions {
-		configurator.Configure(definition)
-	}
 }

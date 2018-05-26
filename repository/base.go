@@ -7,7 +7,7 @@ type Repository struct {
 type RepositoryTemplate interface {
 	SetConnection(connection Connection)
 	FindAll(interface{}, string) error
-	FindById(interface{}, interface{}, string) error
+	FindByID(interface{}, interface{}, string) error
 	Insert(interface{}, string) error
 	Update(interface{}, string) error
 	Delete(interface{}, string) error

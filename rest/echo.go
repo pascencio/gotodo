@@ -8,25 +8,67 @@ import (
 
 	"github.com/labstack/echo"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
-type EchoResourceConfigurator struct {
-	Echo *echo.Echo
+// EchoServer server of the app
+type EchoServer struct {
+	ResourceDefinitions []ResourceDefinition
 }
 
-func (c EchoResourceConfigurator) Configure(definition ResourceDefinition) {
-	for _, resource := range definition.Resources {
-		switch resource.Method {
-		case http.MethodGet:
-			c.Echo.GET(buildResourcePath(definition, resource), createRequestHandler(resource))
-		case http.MethodPut:
-			c.Echo.PUT(buildResourcePath(definition, resource), createRequestHandler(resource))
-		case http.MethodPost:
-			c.Echo.POST(buildResourcePath(definition, resource), createRequestHandler(resource))
-		case http.MethodDelete:
-			c.Echo.DELETE(buildResourcePath(definition, resource), createRequestHandler(resource))
+// EchoRequestHandler request handler for REST services
+type EchoRequestHandler struct {
+	Context  echo.Context
+	Resource Resource
+}
+
+// NewRequestContext factory for RequestContext
+func (h EchoRequestHandler) NewRequestContext() RequestContext {
+	requestContext := RequestContext{
+		pathParamHandler: func(name string) string {
+			return h.Context.Param(name)
+		},
+		queryParamHandler: func(name string) string {
+			return h.Context.QueryParam(name)
+		},
+		entityHandler: func(entity interface{}) {
+			defer h.Context.Request().Body.Close()
+			bytes, error := ioutil.ReadAll(h.Context.Request().Body)
+
+			if error != nil {
+				panic("Error al leer bytes de la entidad")
+			}
+
+			json.Unmarshal(bytes, &entity)
+
+			log.WithFields(log.Fields{
+				"entity": entity,
+			}).Debug("Entidad obtenida")
+		},
+	}
+	return requestContext
+}
+
+// Run start the echo server
+func (s EchoServer) Run() {
+	e := echo.New()
+
+	for _, definition := range s.ResourceDefinitions {
+		for _, resource := range definition.Resources {
+			switch resource.Method {
+			case http.MethodGet:
+				e.GET(buildResourcePath(definition, resource), createRequestHandler(resource))
+			case http.MethodPut:
+				e.PUT(buildResourcePath(definition, resource), createRequestHandler(resource))
+			case http.MethodPost:
+				e.POST(buildResourcePath(definition, resource), createRequestHandler(resource))
+			case http.MethodDelete:
+				e.DELETE(buildResourcePath(definition, resource), createRequestHandler(resource))
+			}
 		}
 	}
+
+	e.Start(viper.GetString("address"))
 }
 
 func createRequestHandler(resource Resource) func(c echo.Context) error {
@@ -55,35 +97,4 @@ func buildResourcePath(definition ResourceDefinition, resource Resource) string 
 	} else {
 		return fmt.Sprintf("/%s", definition.Path)
 	}
-}
-
-type EchoRequestHandler struct {
-	Context  echo.Context
-	Resource Resource
-}
-
-func (h EchoRequestHandler) NewRequestContext() RequestContext {
-	requestContext := RequestContext{
-		pathParamHandler: func(name string) string {
-			return h.Context.Param(name)
-		},
-		queryParamHandler: func(name string) string {
-			return h.Context.QueryParam(name)
-		},
-		entityHandler: func(entity interface{}) {
-			defer h.Context.Request().Body.Close()
-			bytes, error := ioutil.ReadAll(h.Context.Request().Body)
-
-			if error != nil {
-				panic("Error al leer bytes de la entidad")
-			}
-
-			json.Unmarshal(bytes, &entity)
-
-			log.WithFields(log.Fields{
-				"entity": entity,
-			}).Debug("Entidad obtenida")
-		},
-	}
-	return requestContext
 }

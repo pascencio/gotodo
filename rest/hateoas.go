@@ -7,21 +7,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type HateoasSpec struct {
-	Domain   interface{}
-	LinkSpec []LinkSpec `json:"_link"`
+type CrudRestDefinition struct {
+	ResourceDefinition
 }
 
-type LinkSpec struct {
-	Rel  string
-	Href string
-}
-
-type RequestHandlerError struct {
-	Err error
-}
-
-func NewCrudResource(path string, unmarshal func([]byte) interface{}) ResourceDefinition {
+func NewCrudResourceDefinition(path string, unmarshal func([]byte) interface{}) ResourceDefinition {
 
 	resources := []Resource{
 		Resource{

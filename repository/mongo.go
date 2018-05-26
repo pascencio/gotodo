@@ -10,27 +10,33 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// MongoRepositoryTemplate for mongodb operations
 type MongoRepositoryTemplate struct {
 	connection MongoConnection
 }
 
+// FindAll get all data from specific collection
 func (r *MongoRepositoryTemplate) FindAll(result interface{}, name string) error {
 	defer r.connection.Close()
 	err := r.getCollection(name).Find(nil).All(&result)
 	return err
 }
-func (r *MongoRepositoryTemplate) FindId(id interface{}, result interface{}, name string) error {
+
+// FindByID get single document from specific collection
+func (r MongoRepositoryTemplate) FindByID(id interface{}, result interface{}, name string) error {
 	defer r.connection.Close()
 	err := r.getCollection(name).FindId(id).One(result)
 	return err
 }
 
-func (r *MongoRepositoryTemplate) Insert(result interface{}, name string) error {
+// Insert single document on specific collection
+func (r MongoRepositoryTemplate) Insert(result interface{}, name string) error {
 	defer r.connection.Close()
 	err := r.getCollection(name).Insert(&result)
 	return err
 }
 
+// Update single document on specific collection
 func (r *MongoRepositoryTemplate) Update(result interface{}, name string) error {
 	defer r.connection.Close()
 	domainAsserted := result.(domain.Domain)
@@ -38,6 +44,7 @@ func (r *MongoRepositoryTemplate) Update(result interface{}, name string) error 
 	return err
 }
 
+// Delete single document on specific collection
 func (r *MongoRepositoryTemplate) Delete(result interface{}, name string) error {
 	defer r.connection.Close()
 	domainAsserted := result.(domain.Domain)
@@ -50,30 +57,36 @@ func (r *MongoRepositoryTemplate) getCollection(name string) *mgo.Collection {
 	return session.DB(r.connection.database).C(name)
 }
 
+// SetConnection assign single connection to template
 func (r *MongoRepositoryTemplate) SetConnection(connection MongoConnection) {
 	r.connection = connection
 }
 
+// MongoConnection mongodb connection
 type MongoConnection struct {
 	sessionCopy *mgo.Session
 	database    string
 }
 
-func (c *MongoConnection) Close() error {
+// Close a single sessionCopy
+func (c MongoConnection) Close() error {
 	c.sessionCopy.Close()
 	return nil
 }
 
+// MongoConnectionPool connection pool for mongodb
 type MongoConnectionPool struct {
 	mongoSession *mgo.Session
 	database     string
 }
 
-func (p *MongoConnectionPool) GetConnection() MongoConnection {
+// GetConnection return single connection from pool
+func (p MongoConnectionPool) GetConnection() Connection {
 	return MongoConnection{sessionCopy: p.mongoSession.Copy(), database: p.database}
 }
 
-func (p *MongoConnectionPool) Start() error {
+// Start inite the connection pool
+func (p MongoConnectionPool) Start() error {
 	addresses := viper.GetStringSlice("mongodb.addresses")
 	mongoDBDialInfo := &mgo.DialInfo{
 		Addrs:    addresses,
