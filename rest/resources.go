@@ -1,12 +1,13 @@
 package rest
 
-type Resource struct {
-	Method    string
-	Path      string
-	Unmarshal func([]byte) interface{}
-	Handler   func(RequestContext) interface{}
+// Resource represent a single REST service operationg
+type Resource interface {
+	GetMethod() string
+	GetPath() string
+	Handler(RequestContext) interface{}
 }
 
+// ResourceDefinition represent a group of REST service resources
 type ResourceDefinition struct {
 	Path      string
 	Resources []Resource

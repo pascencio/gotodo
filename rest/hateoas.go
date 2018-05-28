@@ -1,94 +1,101 @@
 package rest
 
 import (
+	"fmt"
 	"net/http"
 
-	"github.com/pascencio/gotodo/todo"
-	log "github.com/sirupsen/logrus"
+	"github.com/pascencio/gotodo/domain"
+
+	"github.com/pascencio/gotodo/repository"
 )
 
-type CrudRestDefinition struct {
-	ResourceDefinition
+// CrudRequestHandler handle integration between domain variable declaration, REST request and Repository
+type CrudRequestHandler struct {
+	Repository     repository.Repository
+	Method         string
+	RequestContext RequestContext
+	Domain         domain.Domain
 }
 
-func NewCrudResourceDefinition(path string, unmarshal func([]byte) interface{}) ResourceDefinition {
+// Handle asociate HTTP method with CRUD repository operation
+func (c *CrudRequestHandler) Handle(d domain.Domain) {
+	switch c.Method {
+	case http.MethodPost:
+		c.RequestContext.Entity(d)
+		//c.Repository.Insert(&d)
+		c.Domain = d
+	default:
+		panic(fmt.Errorf("Method not exists: [metho='%s']", c.Method))
+	}
+}
+
+// CrudResource resource for CRUD operations
+type CrudResource struct {
+	Repository     repository.Repository
+	path           string
+	method         string
+	AllocateDomain func(*CrudRequestHandler)
+}
+
+// GetPath path of resource
+func (r CrudResource) GetPath() string {
+	return r.path
+}
+
+// GetMethod method of resource
+func (r CrudResource) GetMethod() string {
+	return r.method
+}
+
+// Handler handle a request to the resource
+func (r CrudResource) Handler(context RequestContext) interface{} {
+	crudHandler := CrudRequestHandler{
+		Repository:     r.Repository,
+		RequestContext: context,
+		Method:         r.GetMethod(),
+	}
+
+	r.AllocateDomain(&crudHandler)
+
+	return crudHandler.Domain
+}
+
+// NewCrudResourceDefinition create a CRUD resource
+func NewCrudResourceDefinition(p string, r repository.Repository, d func(*CrudRequestHandler)) ResourceDefinition {
 
 	resources := []Resource{
-		Resource{
-			Method:    http.MethodGet,
-			Unmarshal: unmarshal,
-			Handler: func(c RequestContext) interface{} {
-				todo := todo.Todo{
-					Title:       "Call to mom",
-					Description: "Call to mom today",
-				}
-
-				todo.Id = "1"
-				return todo
-			},
+		CrudResource{
+			Repository:     r,
+			AllocateDomain: d,
+			method:         http.MethodGet,
 		},
-		Resource{
-			Method:    http.MethodGet,
-			Unmarshal: unmarshal,
-			Path:      ":id",
-			Handler: func(c RequestContext) interface{} {
-				id := c.PathParam("id")
-				log.WithFields(log.Fields{
-					"id": id,
-				}).Debug("Obteniendo todo por id")
-				todo := todo.Todo{
-					Title:       "Call to mom",
-					Description: "Call to mom today",
-				}
-				todo.Id = id
-				return todo
-			},
+		CrudResource{
+			Repository:     r,
+			AllocateDomain: d,
+			method:         http.MethodGet,
+			path:           ":id",
 		},
-		Resource{
-			Method: http.MethodPost,
-			Handler: func(c RequestContext) interface{} {
-				todo := &todo.Todo{}
-				c.Entity(todo)
-
-				log.WithFields(log.Fields{
-					"todo": todo,
-				}).Debug("Insertando todo")
-
-				return todo
-			},
+		CrudResource{
+			Repository:     r,
+			AllocateDomain: d,
+			method:         http.MethodPost,
 		},
-		Resource{
-			Method: http.MethodPut,
-			Path:   ":id",
-			Handler: func(c RequestContext) interface{} {
-				todo := &todo.Todo{}
-				c.Entity(todo)
-				todo.Id = c.PathParam("id")
-				log.WithFields(log.Fields{
-					"todo": todo,
-				}).Debug("Actualizando todo")
-
-				return todo
-			},
+		CrudResource{
+			Repository:     r,
+			AllocateDomain: d,
+			method:         http.MethodPut,
+			path:           ":id",
 		},
-		Resource{
-			Method: http.MethodDelete,
-			Path:   ":id",
-			Handler: func(c RequestContext) interface{} {
-				todo := &todo.Todo{}
-				c.Entity(todo)
-				todo.Id = c.PathParam("id")
-				log.WithFields(log.Fields{
-					"todo": todo,
-				}).Debug("Eliminando todo")
-
-				return todo
-			},
+		CrudResource{
+			Repository:     r,
+			AllocateDomain: d,
+			method:         http.MethodDelete,
+			path:           ":id",
 		},
 	}
 
 	definition := ResourceDefinition{
-		Path:      path,
+		Path:      p,
 		Resources: resources,
 	}
 

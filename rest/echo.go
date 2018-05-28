@@ -55,7 +55,7 @@ func (s EchoServer) Run() {
 
 	for _, definition := range s.ResourceDefinitions {
 		for _, resource := range definition.Resources {
-			switch resource.Method {
+			switch resource.GetMethod() {
 			case http.MethodGet:
 				e.GET(buildResourcePath(definition, resource), createRequestHandler(resource))
 			case http.MethodPut:
@@ -92,8 +92,8 @@ func createRequestHandler(resource Resource) func(c echo.Context) error {
 }
 
 func buildResourcePath(definition ResourceDefinition, resource Resource) string {
-	if resource.Path != "" {
-		return fmt.Sprintf("/%s/%s", definition.Path, resource.Path)
+	if resource.GetPath() != "" {
+		return fmt.Sprintf("/%s/%s", definition.Path, resource.GetPath())
 	} else {
 		return fmt.Sprintf("/%s", definition.Path)
 	}

@@ -1,5 +1,6 @@
 package domain
 
-type Domain struct {
-	Id interface{} `json:"-"`
+// Domain base interface for all domains
+type Domain interface {
+	GetID() interface{}
 }

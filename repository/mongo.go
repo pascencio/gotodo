@@ -16,39 +16,37 @@ type MongoRepositoryTemplate struct {
 }
 
 // FindAll get all data from specific collection
-func (r *MongoRepositoryTemplate) FindAll(result interface{}, name string) error {
+func (r *MongoRepositoryTemplate) FindAll(result []domain.Domain, name string) error {
 	defer r.connection.Close()
 	err := r.getCollection(name).Find(nil).All(&result)
 	return err
 }
 
 // FindByID get single document from specific collection
-func (r MongoRepositoryTemplate) FindByID(id interface{}, result interface{}, name string) error {
+func (r MongoRepositoryTemplate) FindByID(id interface{}, result domain.Domain, name string) error {
 	defer r.connection.Close()
 	err := r.getCollection(name).FindId(id).One(result)
 	return err
 }
 
 // Insert single document on specific collection
-func (r MongoRepositoryTemplate) Insert(result interface{}, name string) error {
+func (r MongoRepositoryTemplate) Insert(result domain.Domain, name string) error {
 	defer r.connection.Close()
 	err := r.getCollection(name).Insert(&result)
 	return err
 }
 
 // Update single document on specific collection
-func (r *MongoRepositoryTemplate) Update(result interface{}, name string) error {
+func (r *MongoRepositoryTemplate) Update(result domain.Domain, name string) error {
 	defer r.connection.Close()
-	domainAsserted := result.(domain.Domain)
-	err := r.getCollection(name).UpdateId(domainAsserted.Id, result)
+	err := r.getCollection(name).UpdateId(result.GetID(), result)
 	return err
 }
 
 // Delete single document on specific collection
-func (r *MongoRepositoryTemplate) Delete(result interface{}, name string) error {
+func (r *MongoRepositoryTemplate) Delete(result domain.Domain, name string) error {
 	defer r.connection.Close()
-	domainAsserted := result.(domain.Domain)
-	err := r.getCollection(name).RemoveId(domainAsserted.Id)
+	err := r.getCollection(name).RemoveId(result.GetID())
 	return err
 }
 

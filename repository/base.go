@@ -1,10 +1,20 @@
 package repository
 
-type Repository struct {
-	Template RepositoryTemplate
+import (
+	"github.com/pascencio/gotodo/domain"
+)
+
+// Repository interface for data operations
+type Repository interface {
+	FindAll(*[]domain.Domain) error
+	FindByID(interface{}, *domain.Domain) error
+	Insert(*domain.Domain) error
+	Update(*domain.Domain) error
+	Delete(*domain.Domain) error
 }
 
-type RepositoryTemplate interface {
+// Template interface for template of data operations
+type Template interface {
 	SetConnection(connection Connection)
 	FindAll(interface{}, string) error
 	FindByID(interface{}, interface{}, string) error
@@ -13,10 +23,12 @@ type RepositoryTemplate interface {
 	Delete(interface{}, string) error
 }
 
+// Connection database connection
 type Connection interface {
 	Close() error
 }
 
+// ConnectionPool pool of database connection
 type ConnectionPool interface {
 	GetConnection() Connection
 	Start() error

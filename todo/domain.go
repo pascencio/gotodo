@@ -1,9 +1,13 @@
 package todo
 
-import "github.com/pascencio/gotodo/domain"
-
+// Todo domain for store todo tasks
 type Todo struct {
-	domain.Domain
-	Title       string `json:"title"`
-	Description string `json:"description"`
+	ID          interface{} `json:"-"`
+	Title       string      `json:"title"`
+	Description string      `json:"description"`
+}
+
+// GetID get ID from todo domain
+func (d Todo) GetID() interface{} {
+	return d.ID
 }

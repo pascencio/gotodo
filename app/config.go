@@ -1,7 +1,6 @@
 package app
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 
@@ -9,6 +8,7 @@ import (
 	"github.com/pascencio/gotodo/repository"
 	"github.com/pascencio/gotodo/rest"
 	"github.com/pascencio/gotodo/todo"
+	"github.com/pascencio/gotodo/todo/mongo"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
@@ -43,11 +43,17 @@ func (c TodoApplication) ConnectionPool(context config.ConfigurationContext) rep
 func (c TodoApplication) Server(context config.ConfigurationContext) rest.Server {
 	return rest.EchoServer{
 		ResourceDefinitions: []rest.ResourceDefinition{
-			rest.NewCrudResourceDefinition("todo", func(bytes []byte) interface{} {
-				todo := &todo.Todo{}
-				json.Unmarshal(bytes, &todo)
-				return todo
-			}),
+			rest.NewCrudResourceDefinition(
+				"todo",
+				mongo.TodoRepository{},
+				func(c *rest.CrudRequestHandler) {
+					todo := &todo.Todo{}
+					c.Handle(todo)
+					log.WithFields(log.Fields{
+						"todo": todo,
+					}).Debug("Todo domain allocated")
+				},
+			),
 		},
 	}
 }

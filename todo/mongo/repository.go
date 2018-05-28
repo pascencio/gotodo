@@ -1,33 +1,41 @@
 package mongo
 
 import (
+	"github.com/pascencio/gotodo/domain"
 	"github.com/pascencio/gotodo/repository"
-	"github.com/pascencio/gotodo/todo"
 )
 
-type MongoTodoRepository struct {
-	repository.Repository
+// TodoRepository for todo app
+type TodoRepository struct {
+	repository.Template
 }
 
-func (r MongoTodoRepository) FindByID(id interface{}) (*todo.Todo, error) {
-	result := todo.Todo{}
+// FindByID find todo by id
+func (r TodoRepository) FindByID(id interface{}, result *domain.Domain) error {
 	err := r.Template.FindByID(id, &result, "todo")
-	return &result, err
+	return err
 }
-func (r MongoTodoRepository) FindAll() (*[]todo.Todo, error) {
-	domains := []todo.Todo{}
+
+// FindAll find all todo
+func (r TodoRepository) FindAll(domains *[]domain.Domain) error {
 	err := r.Template.FindAll(&domains, "todo")
-	return &domains, err
+	return err
 }
-func (r MongoTodoRepository) Insert(result *todo.Todo) (*todo.Todo, error) {
+
+// Insert insert a todo
+func (r TodoRepository) Insert(result *domain.Domain) error {
 	err := r.Template.Insert(&result, "todo")
-	return result, err
+	return err
 }
-func (r MongoTodoRepository) Update(result *todo.Todo) (*todo.Todo, error) {
+
+// Update update a todo
+func (r TodoRepository) Update(result *domain.Domain) error {
 	err := r.Template.Update(&result, "todo")
-	return result, err
+	return err
 }
-func (r MongoTodoRepository) Delete(result *todo.Todo) (*todo.Todo, error) {
+
+// Delete delete a todo
+func (r TodoRepository) Delete(result *domain.Domain) error {
 	err := r.Template.Delete(&result, "todo")
-	return result, err
+	return err
 }
