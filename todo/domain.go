@@ -4,9 +4,9 @@ import "github.com/globalsign/mgo/bson"
 
 // Todo domain for store todo tasks
 type Todo struct {
-	ID          bson.ObjectId `json:"-" bson:"_id,omitempty"`
-	Title       string        `json:"title"`
-	Description string        `json:"description"`
+	ID          bson.ObjectId `json:"id,omitempty" bson:"_id,omitempty"`
+	Title       string        `json:"title,omitempty"`
+	Description string        `json:"description,omitempty"`
 }
 
 // GetID get ID from todo domain

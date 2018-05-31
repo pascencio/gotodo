@@ -52,6 +52,7 @@ func (r MongoRepositoryTemplate) FindByID(id interface{}, name string) Iterator 
 func (r MongoRepositoryTemplate) Insert(result domain.Domain, name string) error {
 	connection := r.ConnectionPool.GetConnection().(MongoConnection)
 	defer connection.Close()
+	result.SetID(bson.NewObjectId())
 	err := r.getCollection(connection, name).Insert(&result)
 	return err
 }
@@ -143,3 +144,20 @@ func (p *MongoConnectionPool) Start() error {
 
 	return nil
 }
+
+// MongoID handle mongodb ID implementation
+type MongoID struct {
+}
+
+// Parse parse from string to an ObjectId
+func (MongoID) Parse(id string) interface{} {
+	return bson.ObjectIdHex(id)
+}
+
+// Convert convert from ObjectId to string
+func (MongoID) Convert(id interface{}) string {
+	return id.(bson.ObjectId).String()
+}
+
+// UnmarshalJSON avoid unmarshaling
+func (MongoID) UnmarshalJSON([]byte) error { return nil }

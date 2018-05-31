@@ -52,9 +52,7 @@ func (r CrudResource) Handler(c RequestContext) interface{} {
 		r.Repository.Insert(result)
 		return result
 	case methodUpdate:
-		ID := c.PathParam("id")
 		result := r.DeserializeEntity(c)
-		result.SetID(r.ParseID(ID))
 		r.Repository.Update(result)
 		return result
 	case methodDelete:
@@ -116,9 +114,7 @@ func NewCrudResourceDefinition(path string, r repository.Repository, d deseriali
 			DeserializeEntity: d,
 			FetchDomain:       f,
 			method:            http.MethodPut,
-			path:              ":id",
 			CrudMethod:        methodUpdate,
-			ParseID:           p,
 		},
 		CrudResource{
 			Repository:        r,

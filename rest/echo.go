@@ -89,6 +89,10 @@ func createRequestHandler(resource Resource) func(c echo.Context) error {
 			return echo.NewHTTPError(http.StatusInternalServerError)
 		}
 
+		if output == nil {
+			output = make(map[string]string)
+		}
+
 		return c.JSON(http.StatusOK, output)
 	}
 
