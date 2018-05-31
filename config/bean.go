@@ -4,10 +4,10 @@ package config
 type BeanScope string
 
 // ScopeSingleton type for singleton beans
-type ScopeSingleton BeanScope
+const ScopeSingleton BeanScope = "singleton"
 
 // ScopePrototype type for prototype beans
-type ScopePrototype BeanScope
+const ScopePrototype BeanScope = "prototype"
 
 // BeanDefinition type
 type BeanDefinition struct {
@@ -17,7 +17,12 @@ type BeanDefinition struct {
 	Dependencies []string
 }
 
+// GetBean return a intance of bean definition calling the factory method
+func (b BeanDefinition) GetBean(c ConfigurationContext) interface{} {
+	return b.Factory(c)
+}
+
 // ConfigurationContext have al beans definition for the application
 type ConfigurationContext struct {
-	BeanDefinitions []BeanDefinition
+	BeanDefinitions map[string]BeanDefinition
 }

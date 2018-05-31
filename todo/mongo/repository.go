@@ -11,31 +11,29 @@ type TodoRepository struct {
 }
 
 // FindByID find todo by id
-func (r TodoRepository) FindByID(id interface{}, result *domain.Domain) error {
-	err := r.Template.FindByID(id, &result, "todo")
-	return err
+func (r TodoRepository) FindByID(id interface{}) repository.Iterator {
+	return r.Template.FindByID(id, "todo")
 }
 
 // FindAll find all todo
-func (r TodoRepository) FindAll(domains *[]domain.Domain) error {
-	err := r.Template.FindAll(&domains, "todo")
-	return err
+func (r TodoRepository) FindAll() repository.Iterator {
+	return r.Template.FindAll("todo")
 }
 
 // Insert insert a todo
-func (r TodoRepository) Insert(result *domain.Domain) error {
-	err := r.Template.Insert(&result, "todo")
+func (r TodoRepository) Insert(result domain.Domain) error {
+	err := r.Template.Insert(result, "todo")
 	return err
 }
 
 // Update update a todo
-func (r TodoRepository) Update(result *domain.Domain) error {
-	err := r.Template.Update(&result, "todo")
+func (r TodoRepository) Update(result domain.Domain) error {
+	err := r.Template.Update(result, "todo")
 	return err
 }
 
 // Delete delete a todo
-func (r TodoRepository) Delete(result *domain.Domain) error {
-	err := r.Template.Delete(&result, "todo")
+func (r TodoRepository) Delete(result domain.Domain) error {
+	err := r.Template.Delete(result, "todo")
 	return err
 }

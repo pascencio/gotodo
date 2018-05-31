@@ -4,6 +4,10 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/globalsign/mgo/bson"
+
+	"github.com/pascencio/gotodo/domain"
+
 	"github.com/pascencio/gotodo/config"
 	"github.com/pascencio/gotodo/repository"
 	"github.com/pascencio/gotodo/rest"
@@ -35,23 +39,46 @@ type TodoApplication struct {
 }
 
 // ConnectionPool configuration for TodoApplication
-func (c TodoApplication) ConnectionPool(context config.ConfigurationContext) repository.ConnectionPool {
+func (c TodoApplication) ConnectionPool(context config.ConfigurationContext) interface{} {
 	return repository.MongoConnectionPool{}
 }
 
 // Server configuraion for TodoApplication
-func (c TodoApplication) Server(context config.ConfigurationContext) rest.Server {
+func (c TodoApplication) Server(context config.ConfigurationContext) interface{} {
+	connection := context.BeanDefinitions["ConnectionPool"].GetBean(context).(repository.MongoConnectionPool)
+	err := connection.Start()
+
+	if err != nil {
+		panic(fmt.Errorf("Error starting application: %s", err))
+	}
+
+	mongoTemplate := repository.MongoRepositoryTemplate{}
+
+	mongoTemplate.SetConnection(&connection)
+
+	todoRepository := mongo.TodoRepository{}
+	todoRepository.Template = mongoTemplate
 	return rest.EchoServer{
 		ResourceDefinitions: []rest.ResourceDefinition{
 			rest.NewCrudResourceDefinition(
 				"todo",
-				mongo.TodoRepository{},
-				func(c *rest.CrudRequestHandler) {
-					todo := &todo.Todo{}
-					c.Handle(todo)
-					log.WithFields(log.Fields{
-						"todo": todo,
-					}).Debug("Todo domain allocated")
+				todoRepository,
+				func(r rest.RequestContext) domain.Domain {
+					result := &todo.Todo{}
+
+					r.Entity(result)
+
+					return result
+				},
+				func(i repository.Iterator) domain.Domain {
+					result := &todo.Todo{}
+					if !i.Next(result) {
+						return nil
+					}
+					return result
+				},
+				func(id string) interface{} {
+					return bson.ObjectIdHex(id)
 				},
 			),
 		},
@@ -62,6 +89,13 @@ func (c TodoApplication) Server(context config.ConfigurationContext) rest.Server
 func (c TodoApplication) Start() {
 
 	context := config.ConfigurationContext{}
-	server := c.Server(context)
+	context.BeanDefinitions = map[string]config.BeanDefinition{
+		"ConnectionPool": config.BeanDefinition{
+			Name:    "ConnectionPool",
+			Scope:   config.ScopeSingleton,
+			Factory: c.ConnectionPool,
+		},
+	}
+	server := c.Server(context).(rest.Server)
 	server.Run()
 }

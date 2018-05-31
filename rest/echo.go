@@ -41,9 +41,7 @@ func (h EchoRequestHandler) NewRequestContext() RequestContext {
 
 			json.Unmarshal(bytes, &entity)
 
-			log.WithFields(log.Fields{
-				"entity": entity,
-			}).Debug("Entidad obtenida")
+			log.WithField("entity", entity).Debug("Get entity complete")
 		},
 	}
 	return requestContext
@@ -79,6 +77,11 @@ func createRequestHandler(resource Resource) func(c echo.Context) error {
 		}
 		requestContext := echoHandler.NewRequestContext()
 
+		log.WithFields(log.Fields{
+			"method": resource.GetMethod(),
+			"path":   resource.GetPath(),
+		}).Debug("Handling request")
+
 		output := resource.Handler(requestContext)
 
 		if r := recover(); r != nil {
@@ -94,7 +97,6 @@ func createRequestHandler(resource Resource) func(c echo.Context) error {
 func buildResourcePath(definition ResourceDefinition, resource Resource) string {
 	if resource.GetPath() != "" {
 		return fmt.Sprintf("/%s/%s", definition.Path, resource.GetPath())
-	} else {
-		return fmt.Sprintf("/%s", definition.Path)
 	}
+	return fmt.Sprintf("/%s", definition.Path)
 }

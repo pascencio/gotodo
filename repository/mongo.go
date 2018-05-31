@@ -7,69 +7,93 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/globalsign/mgo"
+	"github.com/globalsign/mgo/bson"
 	log "github.com/sirupsen/logrus"
 )
 
+// CollectionIterator iterates over mongodb collection
+type CollectionIterator struct {
+	Iter *mgo.Iter
+}
+
+// Next fetch single element. Return true if has more data to fetch.
+func (i CollectionIterator) Next(result domain.Domain) bool {
+	return i.Iter.Next(result)
+}
+
 // MongoRepositoryTemplate for mongodb operations
 type MongoRepositoryTemplate struct {
-	connection MongoConnection
+	ConnectionPool ConnectionPool
 }
 
 // FindAll get all data from specific collection
-func (r *MongoRepositoryTemplate) FindAll(result []domain.Domain, name string) error {
-	defer r.connection.Close()
-	err := r.getCollection(name).Find(nil).All(&result)
-	return err
+func (r MongoRepositoryTemplate) FindAll(name string) Iterator {
+	connection := r.ConnectionPool.GetConnection().(MongoConnection)
+	defer connection.Close()
+	iterator := CollectionIterator{
+		Iter: r.getCollection(connection, name).Find(nil).Iter(),
+	}
+	return iterator
 }
 
 // FindByID get single document from specific collection
-func (r MongoRepositoryTemplate) FindByID(id interface{}, result domain.Domain, name string) error {
-	defer r.connection.Close()
-	err := r.getCollection(name).FindId(id).One(result)
-	return err
+func (r MongoRepositoryTemplate) FindByID(id interface{}, name string) Iterator {
+	connection := r.ConnectionPool.GetConnection().(MongoConnection)
+	defer connection.Close()
+	_id := r.buildID(id)
+	iterator := CollectionIterator{
+		Iter: r.getCollection(connection, name).FindId(_id).Iter(),
+	}
+
+	return iterator
 }
 
 // Insert single document on specific collection
 func (r MongoRepositoryTemplate) Insert(result domain.Domain, name string) error {
-	defer r.connection.Close()
-	err := r.getCollection(name).Insert(&result)
+	connection := r.ConnectionPool.GetConnection().(MongoConnection)
+	defer connection.Close()
+	err := r.getCollection(connection, name).Insert(&result)
 	return err
 }
 
 // Update single document on specific collection
-func (r *MongoRepositoryTemplate) Update(result domain.Domain, name string) error {
-	defer r.connection.Close()
-	err := r.getCollection(name).UpdateId(result.GetID(), result)
+func (r MongoRepositoryTemplate) Update(result domain.Domain, name string) error {
+	connection := r.ConnectionPool.GetConnection().(MongoConnection)
+	defer connection.Close()
+	err := r.getCollection(connection, name).UpdateId(result.GetID(), result)
 	return err
 }
 
 // Delete single document on specific collection
-func (r *MongoRepositoryTemplate) Delete(result domain.Domain, name string) error {
-	defer r.connection.Close()
-	err := r.getCollection(name).RemoveId(result.GetID())
+func (r MongoRepositoryTemplate) Delete(result domain.Domain, name string) error {
+	connection := r.ConnectionPool.GetConnection().(MongoConnection)
+	defer connection.Close()
+	err := r.getCollection(connection, name).RemoveId(result.GetID())
 	return err
 }
 
-func (r *MongoRepositoryTemplate) getCollection(name string) *mgo.Collection {
-	session := r.connection.sessionCopy
-	return session.DB(r.connection.database).C(name)
+func (r MongoRepositoryTemplate) getCollection(connection MongoConnection, name string) *mgo.Collection {
+	return connection.sessionCopy.DB(connection.database).C(name)
+}
+
+func (r MongoRepositoryTemplate) buildID(id interface{}) bson.ObjectId {
+	return bson.ObjectIdHex(id.(string))
 }
 
 // SetConnection assign single connection to template
-func (r *MongoRepositoryTemplate) SetConnection(connection MongoConnection) {
-	r.connection = connection
+func (r *MongoRepositoryTemplate) SetConnection(connection ConnectionPool) {
+	r.ConnectionPool = connection
 }
 
-// MongoConnection mongodb connection
+//MongoConnection session instance
 type MongoConnection struct {
 	sessionCopy *mgo.Session
 	database    string
 }
 
-// Close a single sessionCopy
-func (c MongoConnection) Close() error {
+//Close mongodb session copy
+func (c MongoConnection) Close() {
 	c.sessionCopy.Close()
-	return nil
 }
 
 // MongoConnectionPool connection pool for mongodb
@@ -78,13 +102,18 @@ type MongoConnectionPool struct {
 	database     string
 }
 
-// GetConnection return single connection from pool
-func (p MongoConnectionPool) GetConnection() Connection {
-	return MongoConnection{sessionCopy: p.mongoSession.Copy(), database: p.database}
+// GetConnection a copy of mongo sesion
+func (p MongoConnectionPool) GetConnection() interface{} {
+	mongoConnection := MongoConnection{
+		database:    p.database,
+		sessionCopy: p.mongoSession.Copy(),
+	}
+
+	return mongoConnection
 }
 
 // Start inite the connection pool
-func (p MongoConnectionPool) Start() error {
+func (p *MongoConnectionPool) Start() error {
 	addresses := viper.GetStringSlice("mongodb.addresses")
 	mongoDBDialInfo := &mgo.DialInfo{
 		Addrs:    addresses,

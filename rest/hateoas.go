@@ -9,32 +9,29 @@ import (
 	"github.com/pascencio/gotodo/repository"
 )
 
-// CrudRequestHandler handle integration between domain variable declaration, REST request and Repository
-type CrudRequestHandler struct {
-	Repository     repository.Repository
-	Method         string
-	RequestContext RequestContext
-	Domain         domain.Domain
-}
+const (
+	methodInsert   string = "Insert"
+	methodUpdate   string = "Update"
+	methodDelete   string = "Delete"
+	methodFindAll  string = "FindAll"
+	methodFindByID string = "FindByID"
+)
 
-// Handle asociate HTTP method with CRUD repository operation
-func (c *CrudRequestHandler) Handle(d domain.Domain) {
-	switch c.Method {
-	case http.MethodPost:
-		c.RequestContext.Entity(d)
-		//c.Repository.Insert(&d)
-		c.Domain = d
-	default:
-		panic(fmt.Errorf("Method not exists: [metho='%s']", c.Method))
-	}
-}
+type deserializeEntity func(RequestContext) domain.Domain
+
+type fetchDomain func(repository.Iterator) domain.Domain
+
+type parseID func(string) interface{}
 
 // CrudResource resource for CRUD operations
 type CrudResource struct {
-	Repository     repository.Repository
-	path           string
-	method         string
-	AllocateDomain func(*CrudRequestHandler)
+	Repository        repository.Repository
+	CrudMethod        string
+	path              string
+	method            string
+	DeserializeEntity deserializeEntity
+	FetchDomain       fetchDomain
+	ParseID           parseID
 }
 
 // GetPath path of resource
@@ -48,54 +45,94 @@ func (r CrudResource) GetMethod() string {
 }
 
 // Handler handle a request to the resource
-func (r CrudResource) Handler(context RequestContext) interface{} {
-	crudHandler := CrudRequestHandler{
-		Repository:     r.Repository,
-		RequestContext: context,
-		Method:         r.GetMethod(),
+func (r CrudResource) Handler(c RequestContext) interface{} {
+	switch r.CrudMethod {
+	case methodInsert:
+		result := r.DeserializeEntity(c)
+		r.Repository.Insert(result)
+		return result
+	case methodUpdate:
+		ID := c.PathParam("id")
+		result := r.DeserializeEntity(c)
+		result.SetID(r.ParseID(ID))
+		r.Repository.Update(result)
+		return result
+	case methodDelete:
+		ID := c.PathParam("id")
+		result := r.DeserializeEntity(c)
+		result.SetID(r.ParseID(ID))
+		r.Repository.Delete(result)
+		return result
+	case methodFindAll:
+		iterator := r.Repository.FindAll()
+		var results []interface{}
+		for {
+			element := r.FetchDomain(iterator)
+			if element == nil {
+				break
+			}
+			results = append(results, element)
+		}
+		return results
+	case methodFindByID:
+		ID := c.PathParam("id")
+		iterator := r.Repository.FindByID(ID)
+		element := r.FetchDomain(iterator)
+		return element
+	default:
+		panic(fmt.Errorf("Method not exists: [metho='%s']", r.CrudMethod))
 	}
-
-	r.AllocateDomain(&crudHandler)
-
-	return crudHandler.Domain
 }
 
 // NewCrudResourceDefinition create a CRUD resource
-func NewCrudResourceDefinition(p string, r repository.Repository, d func(*CrudRequestHandler)) ResourceDefinition {
+func NewCrudResourceDefinition(path string, r repository.Repository, d deserializeEntity, f fetchDomain, p parseID) ResourceDefinition {
 
 	resources := []Resource{
 		CrudResource{
-			Repository:     r,
-			AllocateDomain: d,
-			method:         http.MethodGet,
+			Repository:        r,
+			DeserializeEntity: d,
+			FetchDomain:       f,
+			method:            http.MethodGet,
+			CrudMethod:        methodFindAll,
 		},
 		CrudResource{
-			Repository:     r,
-			AllocateDomain: d,
-			method:         http.MethodGet,
-			path:           ":id",
+			Repository:        r,
+			DeserializeEntity: d,
+			FetchDomain:       f,
+			method:            http.MethodGet,
+			path:              ":id",
+			CrudMethod:        methodFindByID,
+			ParseID:           p,
 		},
 		CrudResource{
-			Repository:     r,
-			AllocateDomain: d,
-			method:         http.MethodPost,
+			Repository:        r,
+			DeserializeEntity: d,
+			FetchDomain:       f,
+			method:            http.MethodPost,
+			CrudMethod:        methodInsert,
 		},
 		CrudResource{
-			Repository:     r,
-			AllocateDomain: d,
-			method:         http.MethodPut,
-			path:           ":id",
+			Repository:        r,
+			DeserializeEntity: d,
+			FetchDomain:       f,
+			method:            http.MethodPut,
+			path:              ":id",
+			CrudMethod:        methodUpdate,
+			ParseID:           p,
 		},
 		CrudResource{
-			Repository:     r,
-			AllocateDomain: d,
-			method:         http.MethodDelete,
-			path:           ":id",
+			Repository:        r,
+			DeserializeEntity: d,
+			FetchDomain:       f,
+			method:            http.MethodDelete,
+			path:              ":id",
+			CrudMethod:        methodDelete,
+			ParseID:           p,
 		},
 	}
 
 	definition := ResourceDefinition{
-		Path:      p,
+		Path:      path,
 		Resources: resources,
 	}
 

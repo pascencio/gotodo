@@ -13,6 +13,7 @@ type ResourceDefinition struct {
 	Resources []Resource
 }
 
+// ResourceConfigurator configure resource definitions
 type ResourceConfigurator interface {
 	Configure(ResourceDefinition)
 }
