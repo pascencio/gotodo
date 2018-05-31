@@ -9,7 +9,7 @@
 
 ## Next Steps - Version 1
 
-- [ ] Get Stable Version
+- [x] Get Stable Version
 - [ ] Write Getting Started
 - [ ] Include [Swag](https://github.com/swaggo/swag) and [Govalidator](https://github.com/asaskevich/govalidator)
 - [ ] Implement Docker Environment
