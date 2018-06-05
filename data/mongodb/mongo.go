@@ -1,9 +1,9 @@
-package repository
+package mongodb
 
 import (
 	"time"
 
-	"github.com/pascencio/gotodo/domain"
+	"github.com/pascencio/gotodo/data"
 	"github.com/spf13/viper"
 
 	"github.com/globalsign/mgo"
@@ -17,17 +17,17 @@ type CollectionIterator struct {
 }
 
 // Next fetch single element. Return true if has more data to fetch.
-func (i CollectionIterator) Next(result domain.Domain) bool {
+func (i CollectionIterator) Next(result data.Domain) bool {
 	return i.Iter.Next(result)
 }
 
 // MongoRepositoryTemplate for mongodb operations
 type MongoRepositoryTemplate struct {
-	ConnectionPool ConnectionPool
+	ConnectionPool data.ConnectionPool
 }
 
 // FindAll get all data from specific collection
-func (r MongoRepositoryTemplate) FindAll(name string) Iterator {
+func (r MongoRepositoryTemplate) FindAll(name string) data.Iterator {
 	connection := r.ConnectionPool.GetConnection().(MongoConnection)
 	defer connection.Close()
 	iterator := CollectionIterator{
@@ -37,7 +37,7 @@ func (r MongoRepositoryTemplate) FindAll(name string) Iterator {
 }
 
 // FindByID get single document from specific collection
-func (r MongoRepositoryTemplate) FindByID(id interface{}, name string) Iterator {
+func (r MongoRepositoryTemplate) FindByID(id interface{}, name string) data.Iterator {
 	connection := r.ConnectionPool.GetConnection().(MongoConnection)
 	defer connection.Close()
 	_id := r.buildID(id)
@@ -49,7 +49,7 @@ func (r MongoRepositoryTemplate) FindByID(id interface{}, name string) Iterator 
 }
 
 // Insert single document on specific collection
-func (r MongoRepositoryTemplate) Insert(result domain.Domain, name string) error {
+func (r MongoRepositoryTemplate) Insert(result data.Domain, name string) error {
 	connection := r.ConnectionPool.GetConnection().(MongoConnection)
 	defer connection.Close()
 	result.SetID(bson.NewObjectId())
@@ -58,7 +58,7 @@ func (r MongoRepositoryTemplate) Insert(result domain.Domain, name string) error
 }
 
 // Update single document on specific collection
-func (r MongoRepositoryTemplate) Update(result domain.Domain, name string) error {
+func (r MongoRepositoryTemplate) Update(result data.Domain, name string) error {
 	connection := r.ConnectionPool.GetConnection().(MongoConnection)
 	defer connection.Close()
 	err := r.getCollection(connection, name).UpdateId(result.GetID(), result)
@@ -66,7 +66,7 @@ func (r MongoRepositoryTemplate) Update(result domain.Domain, name string) error
 }
 
 // Delete single document on specific collection
-func (r MongoRepositoryTemplate) Delete(result domain.Domain, name string) error {
+func (r MongoRepositoryTemplate) Delete(result data.Domain, name string) error {
 	connection := r.ConnectionPool.GetConnection().(MongoConnection)
 	defer connection.Close()
 	err := r.getCollection(connection, name).RemoveId(result.GetID())
@@ -82,7 +82,7 @@ func (r MongoRepositoryTemplate) buildID(id interface{}) bson.ObjectId {
 }
 
 // SetConnection assign single connection to template
-func (r *MongoRepositoryTemplate) SetConnection(connection ConnectionPool) {
+func (r *MongoRepositoryTemplate) SetConnection(connection data.ConnectionPool) {
 	r.ConnectionPool = connection
 }
 

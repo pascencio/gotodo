@@ -11,5 +11,11 @@
         "database":"gotodo",
         "username":"gtdusr",
         "password":"supersecret"
+    },
+    "messages": {
+        "validation":{
+            "required":"The field '%s' it's required",
+            "length":"The length of field '%s' it's not valid"
+        }
     }
 }

@@ -1,10 +1,10 @@
-package rest
+package http
 
 // Resource represent a single REST service operationg
 type Resource interface {
 	GetMethod() string
 	GetPath() string
-	Handler(RequestContext) interface{}
+	Handler(RequestContext) (interface{}, error)
 }
 
 // ResourceDefinition represent a group of REST service resources

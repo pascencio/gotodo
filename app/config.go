@@ -6,11 +6,10 @@ import (
 
 	"github.com/globalsign/mgo/bson"
 
-	"github.com/pascencio/gotodo/domain"
-
 	"github.com/pascencio/gotodo/config"
-	"github.com/pascencio/gotodo/repository"
-	"github.com/pascencio/gotodo/rest"
+	"github.com/pascencio/gotodo/data"
+	"github.com/pascencio/gotodo/data/mongodb"
+	"github.com/pascencio/gotodo/deliver/http"
 	"github.com/pascencio/gotodo/todo"
 	"github.com/pascencio/gotodo/todo/mongo"
 	log "github.com/sirupsen/logrus"
@@ -40,37 +39,37 @@ type TodoApplication struct {
 
 // ConnectionPool configuration for TodoApplication
 func (c TodoApplication) ConnectionPool(context config.ConfigurationContext) interface{} {
-	return repository.MongoConnectionPool{}
+	return mongodb.MongoConnectionPool{}
 }
 
 // Server configuraion for TodoApplication
 func (c TodoApplication) Server(context config.ConfigurationContext) interface{} {
-	connection := context.BeanDefinitions["ConnectionPool"].GetBean(context).(repository.MongoConnectionPool)
+	connection := context.BeanDefinitions["ConnectionPool"].GetBean(context).(mongodb.MongoConnectionPool)
 	err := connection.Start()
 
 	if err != nil {
 		panic(fmt.Errorf("Error starting application: %s", err))
 	}
 
-	mongoTemplate := repository.MongoRepositoryTemplate{}
+	mongoTemplate := mongodb.MongoRepositoryTemplate{}
 
 	mongoTemplate.SetConnection(&connection)
 
 	todoRepository := mongo.TodoRepository{}
 	todoRepository.Template = mongoTemplate
-	return rest.EchoServer{
-		ResourceDefinitions: []rest.ResourceDefinition{
-			rest.NewCrudResourceDefinition(
+	return http.EchoServer{
+		ResourceDefinitions: []http.ResourceDefinition{
+			http.NewCrudResourceDefinition(
 				"todo",
 				todoRepository,
-				func(r rest.RequestContext) domain.Domain {
+				func(r http.RequestContext) (data.Domain, error) {
 					result := &todo.Todo{}
 
-					r.Entity(result)
+					err := r.Entity(result)
 
-					return result
+					return result, err
 				},
-				func(i repository.Iterator) domain.Domain {
+				func(i data.Iterator) data.Domain {
 					result := &todo.Todo{}
 					if !i.Next(result) {
 						return nil
@@ -96,6 +95,6 @@ func (c TodoApplication) Start() {
 			Factory: c.ConnectionPool,
 		},
 	}
-	server := c.Server(context).(rest.Server)
+	server := c.Server(context).(http.Server)
 	server.Run()
 }

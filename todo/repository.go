@@ -1,9 +1,14 @@
 package todo
 
-type TodoRepository interface {
-	FindById(id interface{}) (*Todo, error)
-	FindAll() (*[]Todo, error)
-	Insert(todo *Todo) (*Todo, error)
-	Update(todo *Todo) (*Todo, error)
-	Delete(todo *Todo) (*Todo, error)
+import (
+	"github.com/pascencio/gotodo/data"
+)
+
+// Repository abstract todo repository
+type Repository interface {
+	FindById(id interface{}) data.Iterator
+	FindAll() data.Iterator
+	Insert(data.Domain) error
+	Update(data.Domain) error
+	Delete(data.Domain) error
 }

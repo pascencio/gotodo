@@ -1,12 +1,10 @@
-package rest
+package http
 
 import (
 	"fmt"
 	"net/http"
 
-	"github.com/pascencio/gotodo/domain"
-
-	"github.com/pascencio/gotodo/repository"
+	"github.com/pascencio/gotodo/data"
 )
 
 const (
@@ -17,15 +15,15 @@ const (
 	methodFindByID string = "FindByID"
 )
 
-type deserializeEntity func(RequestContext) domain.Domain
+type deserializeEntity func(RequestContext) (data.Domain, error)
 
-type fetchDomain func(repository.Iterator) domain.Domain
+type fetchDomain func(data.Iterator) data.Domain
 
 type parseID func(string) interface{}
 
 // CrudResource resource for CRUD operations
 type CrudResource struct {
-	Repository        repository.Repository
+	Repository        data.Repository
 	CrudMethod        string
 	path              string
 	method            string
@@ -45,22 +43,28 @@ func (r CrudResource) GetMethod() string {
 }
 
 // Handler handle a request to the resource
-func (r CrudResource) Handler(c RequestContext) interface{} {
+func (r CrudResource) Handler(c RequestContext) (interface{}, error) {
 	switch r.CrudMethod {
 	case methodInsert:
-		result := r.DeserializeEntity(c)
+		result, err := r.DeserializeEntity(c)
+		if err != nil {
+			return nil, err
+		}
 		r.Repository.Insert(result)
-		return result
+		return result, nil
 	case methodUpdate:
-		result := r.DeserializeEntity(c)
+		result, err := r.DeserializeEntity(c)
+		if err != nil {
+			return nil, err
+		}
 		r.Repository.Update(result)
-		return result
+		return result, nil
 	case methodDelete:
 		ID := c.PathParam("id")
-		result := r.DeserializeEntity(c)
-		result.SetID(r.ParseID(ID))
-		r.Repository.Delete(result)
-		return result
+		iterator := r.Repository.FindByID(ID)
+		element := r.FetchDomain(iterator)
+		r.Repository.Delete(element)
+		return element, nil
 	case methodFindAll:
 		iterator := r.Repository.FindAll()
 		var results []interface{}
@@ -71,19 +75,19 @@ func (r CrudResource) Handler(c RequestContext) interface{} {
 			}
 			results = append(results, element)
 		}
-		return results
+		return results, nil
 	case methodFindByID:
 		ID := c.PathParam("id")
 		iterator := r.Repository.FindByID(ID)
 		element := r.FetchDomain(iterator)
-		return element
+		return element, nil
 	default:
-		panic(fmt.Errorf("Method not exists: [metho='%s']", r.CrudMethod))
+		return nil, fmt.Errorf("Method not exists: [metho='%s']", r.CrudMethod)
 	}
 }
 
 // NewCrudResourceDefinition create a CRUD resource
-func NewCrudResourceDefinition(path string, r repository.Repository, d deserializeEntity, f fetchDomain, p parseID) ResourceDefinition {
+func NewCrudResourceDefinition(path string, r data.Repository, d deserializeEntity, f fetchDomain, p parseID) ResourceDefinition {
 
 	resources := []Resource{
 		CrudResource{
