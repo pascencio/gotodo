@@ -57,7 +57,7 @@ Then, if everything it's ok you can access to the app on this URL: http://localh
 - [x] Get Stable Version
 - [x] Write Getting Started
 - [x] Include [Govalidator](https://github.com/asaskevich/govalidator)
-- [ ] Implement Docker Environment
+- [x] Implement Docker Environment
 - [ ] Implement Dependencies Injection
 - [ ] Implement Unit Testing
 - [ ] Implement CI using Travis

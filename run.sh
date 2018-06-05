@@ -13,11 +13,12 @@ run(){
 }
 
 watch(){
-    while inotifywait -r --exclude \.git -e modify . ; do
+    while inotifywait -r --exclude "(\.git|run.sh|vendor|Dockerfile|docker-compose.yml|\.dockerignore|debug|Gopkg.lock|README.md|\.gotodo\.pid)" -e modify . ; do
     cancel
     run
     done
 }
 
+/usr/bin/wait-for-it db:27017 -t 0 -- echo "MongoDB Started"
 run
 watch
