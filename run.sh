@@ -13,7 +13,7 @@ run(){
 }
 
 watch(){
-    while inotifywait -r -e modify . ; do
+    while inotifywait -r --exclude \.git -e modify . ; do
     cancel
     run
     done
