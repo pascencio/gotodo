@@ -56,7 +56,7 @@ Then, if everything it's ok you can access to the app on this URL: http://localh
 
 - [x] Get Stable Version
 - [x] Write Getting Started
-- [ ] Include [Swag](https://github.com/swaggo/swag) and [Govalidator](https://github.com/asaskevich/govalidator)
+- [x] Include [Govalidator](https://github.com/asaskevich/govalidator)
 - [ ] Implement Docker Environment
 - [ ] Implement Dependencies Injection
 - [ ] Implement Unit Testing

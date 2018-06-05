@@ -1,0 +1,25 @@
+version: "3"
+
+services:
+  todo:
+    build:
+      context: .
+      args:
+        - http_proxy=${http_proxy}
+    volumes:
+      - ./:/go/src/github.com/pascencio/gotodo
+    ports:
+      - 8080:8080
+    environment:
+      - http_proxy=${http_proxy}
+      - https_proxy=${http_proxy}
+      - HTTP_PROXY=${http_proxy}
+      - HTTPS_PROXY=${http_proxy}
+  db:
+    image: bitnami/mongodb
+    ports: 
+      - 27017:27017
+    environment:
+      - MONGODB_USERNAME=gtdusr
+      - MONGODB_PASSWORD=supersecret
+      - MONGODB_DATABASE=gotodo
